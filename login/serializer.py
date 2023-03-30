@@ -11,11 +11,6 @@ class usersellerserializer(serializers.ModelSerializer):
         model=user_seller
         fields='__all__'
 
-class logininfoserializer(serializers.ModelSerializer):
-    class Meta:
-        model=login
-        fields='__all__'
-
 class cropdetailserializer(serializers.ModelSerializer):
     class Meta:
         model=cropdetail

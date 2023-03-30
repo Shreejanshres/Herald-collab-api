@@ -1,4 +1,3 @@
-from django.contrib.auth import login
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
@@ -16,13 +15,12 @@ def Login(request):
         data=json.loads(request.body)
         email = data.get('email')
         password = data.get('pass')
+        user=data.get('user')
         print(f'Email: {email}, Password: {password}')
-        # user = authenticate(request, username=email, password=password)
-        user = customauthenticate(email=email, password=password)
+        user = customauthenticate(email=email, password=password,user=user)
         print(user)
         if user is not None:
             print("Login successful")
-            
             return JsonResponse({'success': True, 'message': 'Login successful'})
         else:
             return JsonResponse({'success': False, 'message': 'Invalid credentials'})
@@ -30,32 +28,61 @@ def Login(request):
         return JsonResponse({'message': 'Invalid request method'})
     
 @csrf_exempt
-def add_user(request):
-    if request.method =='POST':
-        data=json.loads(request.body)
-        name=data.get('name')
-        email = data.get('email')
-        password=data.get('pass')
-        address=data.get('address')
-        phone=data .get('phone')
-        user=data.get('user')
-        print(f'Name: {name}, Email: {email}, Password: {password}, Address: {address}, Phone: {phone}, User: {user}')
-        
+def customauthenticate(email,password,user):
+        print("Inside customauthenticate")
+        print(f'Email: {email}, Password: {password},user:{user}')
+        if user=="farmer":
+            try:
+                data=user_farmer.objects.get(email=email,password=password)
+                return data
+            except:
+                return None
+        elif user=="seller":
+            try:
+                data=user_seller.objects.get(email=email,password=password)
+                return data
+            except:
+                return None
+ 
 
 @api_view(['GET'])
 def cropsdetail(request):
     crops=cropdetail.objects.all()
     serializer=cropdetailserializer(crops,many=True)
-    print(request,"request")
     return Response(serializer.data)
 
+
+        
 @csrf_exempt
-def customauthenticate(email,password):
-        print("Inside customauthenticate")
-        print(f'Email: {email}, Password: {password}')
-        try:
-            data=login.objects.get(email=email,password=password)
-            print('from userdb',data)
-            return data
-        except:
-            return None
+def add_user(request):
+    print("Inside add_user")
+    if request.method =='POST':
+        data=json.loads(request.body)
+        email = data.get('email')
+        password=data.get('pass')
+        user=data.get('user')
+        print(f'Email: {email}, Password: {password}, User: {user}')
+        if user=='farmer':
+            
+            try:
+                data=user_farmer.objects.get(email=email)
+                print(data)
+                return JsonResponse({'success': False, 'message': 'User already exists'})
+            except:
+                data=user_farmer.objects.create(email=email,password=password)
+                data.save()
+                return JsonResponse({'success': True, 'message': 'User added successfully'})
+        elif user=='seller':
+            try:
+                data=user_seller.objects.get(email=email)
+                return JsonResponse({'success': False, 'message': 'User already exists'})
+            except:
+                data=user_seller.objects.create(email=email,password=password)
+                data.save()
+                return JsonResponse({'success': True, 'message': 'User added successfully'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Invalid user type'})
+    else:
+        return Response({'message': 'Invalid request method'})
+
+
