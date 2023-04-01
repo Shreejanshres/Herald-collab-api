@@ -9,6 +9,8 @@ class user_farmer(models.Model):
     address=models.CharField(max_length=100,blank=True,null=True)
     email=models.CharField(max_length=50,unique=True,blank=True,null=True)
     password=models.CharField(max_length=50,blank=True,null=True)
+    gender=models.CharField(max_length=10,blank=True,null=True)
+    dob=models.CharField(max_length=10,blank=True,null=True)
     citizenshipfrontpic=models.ImageField(upload_to='images/',blank=True,null=True)
     citizenshipbackpic=models.ImageField(upload_to='images/',blank=True,null=True)
     profilepic=models.ImageField(upload_to='images/',blank=True,null=True)

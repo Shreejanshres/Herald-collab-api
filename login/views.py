@@ -63,7 +63,6 @@ def add_user(request):
         user=data.get('user')
         print(f'Email: {email}, Password: {password}, User: {user}')
         if user=='farmer':
-            
             try:
                 data=user_farmer.objects.get(email=email)
                 print(data)
@@ -86,3 +85,47 @@ def add_user(request):
         return Response({'message': 'Invalid request method'})
 
 
+@csrf_exempt
+def kyc(request):
+    print("Inside kyc")
+    if request.method == 'POST':
+        data=json.loads(request.body)
+        email = data.get('email')
+        name=data.get('name')
+        phone=data.get('phone')
+        address=data.get('address')
+        gender=data.get('gender')
+        dob=data.get('dob')
+        print(name,email,phone,address,gender,dob)
+        try:
+            data=user_farmer.objects.get(email=email)
+            data.fullname=name
+            data.phone=phone
+            data.address=address
+            data.gender=gender
+            data.dob=dob
+            data.save()
+            return JsonResponse({'success': True, 'message': 'KYC updated successfully'})
+        except:
+            return JsonResponse({'success': False, 'message': 'User does not exist'})
+            
+    else:
+        return Response({'message': 'Invalid request method'})
+    
+
+@csrf_exempt
+def forget(request):
+    print("Inside forget")
+    if request.method == 'POST':
+        data=json.loads(request.body)
+        email = data.get('email')
+        password=data.get('password')
+        print(email)
+        try:
+            data=user_farmer.objects.get(email=email)
+            data.password=password
+        except:
+            return JsonResponse({'success': False, 'message': 'User does not exist'})
+            
+    else:
+        return Response({'message': 'Invalid request method'})
