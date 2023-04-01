@@ -46,10 +46,10 @@ def customauthenticate(email,password,user):
  
 
 @api_view(['GET'])
-def cropsdetail(request):
-    crops=cropdetail.objects.all()
-    serializer=cropdetailserializer(crops,many=True)
-    return Response(serializer.data)
+def cropsdetail(request):#get request from the frontend
+    crops=cropdetail.objects.all() #get all the data from the database
+    serializer=cropdetailserializer(crops,many=True) #convert the data into json format
+    return Response(serializer.data) #return the data to the frontend
 
 
         
