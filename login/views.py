@@ -10,22 +10,22 @@ from rest_framework.response import Response
 
 
 @csrf_exempt   
-def Login(request):
-    if request.method == 'POST':
-        data=json.loads(request.body)
-        email = data.get('email')
-        password = data.get('pass')
-        user=data.get('user')
-        print(f'Email: {email}, Password: {password}')
-        user = customauthenticate(email=email, password=password,user=user)
-        print(user)
-        if user is not None:
-            print("Login successful")
-            return JsonResponse({'success': True, 'message': 'Login successful'})
-        else:
-            return JsonResponse({'success': False, 'message': 'Invalid credentials'})
-    else:
-        return JsonResponse({'message': 'Invalid request method'})
+def Login(request): #login function
+    if request.method == 'POST': #check if the request is post
+        data=json.loads(request.body) #get the data from the frontend
+        email = data.get('email') #get the email from the data
+        password = data.get('pass') #get the password from the data
+        user=data.get('user') #get the user type from the data
+        print(f'Email: {email}, Password: {password}')  #print the data
+        user = customauthenticate(email=email, password=password,user=user) #call the customauthenticate function
+        print(user)     #print the data
+        if user is not None: #check if the user is present in the database
+            print("Login successful") #print the message
+            return JsonResponse({'success': True, 'message': 'Login successful'}) #return the response to the frontend
+        else: #if the user is not present in the database
+            return JsonResponse({'success': False, 'message': 'Invalid credentials'}) #return the response to the frontend
+    else: #if the request is not post
+        return JsonResponse({'message': 'Invalid request method'}) #return the response to the frontend
     
 @csrf_exempt
 def customauthenticate(email,password,user):
@@ -85,8 +85,8 @@ def add_user(request): #add user
 
 
 @csrf_exempt
-def kyc(request):
-    print("Inside kyc")
+def kyc(request): #add user
+    print("Inside kyc") 
     if request.method == 'POST':
         data=json.loads(request.body)
         email = data.get('email')
