@@ -1,49 +1,52 @@
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
 
 from .models import *
 from .serializer import *
+import requests
 
+from django.contrib.auth import login,authenticate
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 
 @csrf_exempt   
-def Login(request): #login function
-    if request.method == 'POST': #check if the request is post
-        data=json.loads(request.body) #get the data from the frontend
-        email = data.get('email') #get the email from the data
-        password = data.get('pass') #get the password from the data
-        user=data.get('user') #get the user type from the data
-        print(f'Email: {email}, Password: {password}')  #print the data
-        user = customauthenticate(email=email, password=password,user=user) #call the customauthenticate function
-        print(user)     #print the data
-        if user is not None: #check if the user is present in the database
-            print("Login successful") #print the message
-            return JsonResponse({'success': True, 'message': 'Login successful'}) #return the response to the frontend
-        else: #if the user is not present in the database
-            return JsonResponse({'success': False, 'message': 'Invalid credentials'}) #return the response to the frontend
-    else: #if the request is not post
-        return JsonResponse({'message': 'Invalid request method'}) #return the response to the frontend
-    
-@csrf_exempt
-def customauthenticate(email,password,user):
-        print("Inside customauthenticate")
-        print(f'Email: {email}, Password: {password},user:{user}')
-        if user=="farmer":
-            try:
-                data=user_farmer.objects.get(email=email,password=password)
-                return data
-            except:
-                return None
-        elif user=="seller":
-            try:
-                data=user_seller.objects.get(email=email,password=password)
-                return data
-            except:
-                return None
- 
+def login(request):
+    if request.method=='POST':
+        data=json.loads(request.body)
+        email=data.get('email')
+        password=data.get('pass')
+        print(email,password)
+        try:
+            data=get_object_or_404(farmer,email=email,password=password)
+            response_data={
+                'id':data.id,
+                'name':data.name,
+                'address':data.address,
+                'phone':data.phone,
+                'email':data.email,
+                'type':'farmer'
+            }
+            return JsonResponse(response_data)
+        except:
+             pass
+        try:
+            data=get_object_or_404(seller,email=email,password=password)
+            response_data={
+                'id':data.id,
+                'name':data.name,
+                'address':data.address,
+                'phone':data.phone,
+                'email':data.email,
+                'type':'seller'
+            }
+            return JsonResponse(response_data)
+        except:
+                pass
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid Request'})
 
 @api_view(['GET'])
 def cropsdetail(request):#get request from the frontend
@@ -53,78 +56,86 @@ def cropsdetail(request):#get request from the frontend
 
 
         
-@csrf_exempt
-def add_user(request): #add user
-    if request.method =='POST': #check if the request is post
-        data=json.loads(request.body) #get the data from the frontend
-        email = data.get('email') #get the email from the data
-        password=data.get('pass') #get the password from the data
-        user=data.get('user') #get the user type from the data
-        print(f'Email: {email}, Password: {password}, User: {user}') #print the data
-        if user=='farmer': #check if the user is farmer
-            try: #try to get the data from the database
-                data=user_farmer.objects.get(email=email) #get the data from the database
-                print(data) #print the data
-                return JsonResponse({'success': False, 'message': 'User already exists'}) #return the response to the frontend
-            except: #if the data is not present in the database
-                data=user_farmer.objects.create(email=email,password=password) #create a new user
-                data.save() #save the data
-                return JsonResponse({'success': True, 'message': 'User added successfully'}) #return the response to the frontend
-        elif user=='seller': #check if the user is seller
-            try: #try to get the data from the database
-                data=user_seller.objects.get(email=email) #get the data from the database
-                return JsonResponse({'success': False, 'message': 'User already exists'}) #return the response to the frontend
-            except: #if the data is not present in the database
-                data=user_seller.objects.create(email=email,password=password)  #create a new user
-                data.save() #save the data
-                return JsonResponse({'success': True, 'message': 'User added successfully'})  #return the response to the frontend
-        else: #if the user type is invalid
-            return JsonResponse({'success': False, 'message': 'Invalid user type'}) #return the response to the frontend
-    else:   #if the request is not post
-        return Response({'message': 'Invalid request method'}) #return the response to the frontend
+# @csrf_exempt
+# def add_user(request): #add user
+#     if request.method =='POST': #check if the request is post
+#         data=json.loads(request.body) #get the data from the frontend
+#         email = data.get('email') #get the email from the data
+#         password=data.get('pass') #get the password from the data
+#         user=data.get('user') #get the user type from the data
+#         print(f'Email: {email}, Password: {password}, User: {user}') #print the data
+#         if user=='farmer': #check if the user is farmer
+#             try: #try to get the data from the database
+#                 data=user_farmer.objects.get(email=email) #get the data from the database
+#                 print(data) #print the data
+#                 return JsonResponse({'success': False, 'message': 'User already exists'}) #return the response to the frontend
+#             except: #if the data is not present in the database
+#                 data=user_farmer.objects.create(email=email,password=password) #create a new user
+#                 data.save() #save the data
+#                 return JsonResponse({'success': True, 'message': 'User added successfully'}) #return the response to the frontend
+#         elif user=='seller': #check if the user is seller
+#             try: #try to get the data from the database
+#                 data=user_seller.objects.get(email=email) #get the data from the database
+#                 return JsonResponse({'success': False, 'message': 'User already exists'}) #return the response to the frontend
+#             except: #if the data is not present in the database
+#                 data=user_seller.objects.create(email=email,password=password)  #create a new user
+#                 data.save() #save the data
+#                 return JsonResponse({'success': True, 'message': 'User added successfully'})  #return the response to the frontend
+#         else: #if the user type is invalid
+#             return JsonResponse({'success': False, 'message': 'Invalid user type'}) #return the response to the frontend
+#     else:   #if the request is not post
+#         return Response({'message': 'Invalid request method'}) #return the response to the frontend
 
 
-@csrf_exempt
-def kyc(request): #add user
-    print("Inside kyc") 
-    if request.method == 'POST':
-        data=json.loads(request.body)
-        email = data.get('email')
-        name=data.get('name')
-        phone=data.get('phone')
-        address=data.get('address')
-        gender=data.get('gender')
-        dob=data.get('dob')
-        print(name,email,phone,address,gender,dob)
-        try:
-            data=user_farmer.objects.get(email=email)
-            data.fullname=name
-            data.phone=phone
-            data.address=address
-            data.gender=gender
-            data.dob=dob
-            data.save()
-            return JsonResponse({'success': True, 'message': 'KYC updated successfully'})
-        except:
-            return JsonResponse({'success': False, 'message': 'User does not exist'})
+# @csrf_exempt
+# def kyc(request): #add user
+#     print("Inside kyc")  #print the message
+#     if request.method == 'POST': #check if the request is post
+#         data=json.loads(request.body) #get the data from the frontend
+#         email = data.get('email') #get the email from the data
+#         name=data.get('name') #get the name from the data
+#         phone=data.get('phone') #get the phone number from the data
+#         address=data.get('address')     #get the address from the data
+#         gender=data.get('gender')      #get the gender from the data
+#         dob=data.get('dob')         #get the date of birth from the data
+#         print(name,email,phone,address,gender,dob) #print the data
+#         try: #try to get the data from the database
+#             data=user_farmer.objects.get(email=email) #get the data from the database
+#             data.fullname=name #update the data
+#             data.phone=phone #update the data
+#             data.address=address #update the data
+#             data.gender=gender #update the data
+#             data.dob=dob #update the data
+#             data.save() #save the data
+#             return JsonResponse({'success': True, 'message': 'KYC updated successfully'}) #return the response to the frontend
+#         except: #if the data is not present in the database
+#             return JsonResponse({'success': False, 'message': 'User does not exist'}) #return the response to the frontend
             
-    else:
-        return Response({'message': 'Invalid request method'})
+#     else: #if the request is not post
+#         return Response({'message': 'Invalid request method'})  #return the response to the frontend
+    
+
+# @csrf_exempt
+# def forget(request):
+#     print("Inside forget")
+#     if request.method == 'POST':
+#         data=json.loads(request.body)
+#         email = data.get('email')
+#         password=data.get('password')
+#         print(email)
+#         try:
+#             data=user_farmer.objects.get(email=email)
+#             data.password=password
+#         except:
+#             return JsonResponse({'success': False, 'message': 'User does not exist'})
+            
+#     else:
+#         return Response({'message': 'Invalid request method'})
     
 
 @csrf_exempt
-def forget(request):
-    print("Inside forget")
-    if request.method == 'POST':
-        data=json.loads(request.body)
-        email = data.get('email')
-        password=data.get('password')
-        print(email)
-        try:
-            data=user_farmer.objects.get(email=email)
-            data.password=password
-        except:
-            return JsonResponse({'success': False, 'message': 'User does not exist'})
-            
-    else:
-        return Response({'message': 'Invalid request method'})
+@api_view(['Get'])
+def get_seller_data(request):
+    data=seller.objects.all()
+    serializer=sellerserializer(data,many=True)
+    return JsonResponse(serializer.data,safe=False)

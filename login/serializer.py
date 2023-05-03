@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from .models import *
 
-class userfarmerserializer(serializers.ModelSerializer):
+class farmerserializer(serializers.ModelSerializer):
     class Meta:
-        model=user_farmer
+        model=farmer
         fields='__all__'
 
-class usersellerserializer(serializers.ModelSerializer):
+class sellerserializer(serializers.ModelSerializer):
     class Meta:
-        model=user_seller
+        model=seller
         fields='__all__'
 
 class cropdetailserializer(serializers.ModelSerializer):
