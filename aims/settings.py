@@ -143,3 +143,11 @@ CORS_ORIGIN_WHITELIST = [
 # Allow cross-site request forgery protection for AJAX requests
 CSRF_COOKIE_NAME = "csrftoken"
 CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"
+
+EMAIL_BACKEND ='django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'shreejan.shrestha03@gmail.com'
+EMAIL_HOST_PASSWORD = 'fmycujgjtkjoitpc'
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False

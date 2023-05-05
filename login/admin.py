@@ -5,4 +5,4 @@ from .models import *
 admin.site.register(farmer)
 admin.site.register(seller)
 admin.site.register(cropdetail)
-
+admin.site.register(event)

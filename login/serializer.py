@@ -15,3 +15,8 @@ class cropdetailserializer(serializers.ModelSerializer):
     class Meta:
         model=cropdetail
         fields='__all__'
+        
+class eventserializer(serializers.ModelSerializer):
+    class Meta:
+        model=event
+        fields='__all__'
