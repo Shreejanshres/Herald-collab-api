@@ -1,8 +1,9 @@
-from django.contrib import admin
+from django.contrib.admin import site
 from .models import *
 
 # Register your models here.
-admin.site.register(farmer)
-admin.site.register(seller)
-admin.site.register(cropdetail)
-admin.site.register(event)
+site.register(seller)
+site.register(farmer)
+site.register(cropdetail)
+site.register(event)
+site.register(admin)

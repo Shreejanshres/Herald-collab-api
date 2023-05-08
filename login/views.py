@@ -9,8 +9,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 
 from .models import *
+from login.models import farmer
 from .serializer import *
-import requests
 from django.core import serializers
 
 from django.contrib.auth import login, authenticate
@@ -25,7 +25,8 @@ def login(request):
         email = data.get('email')
         password = data.get('pass')
         print(email, password)
-        try:
+        if (farmer.objects.filter(email=email, password=password).exists()):
+            print("farmer")
             data = get_object_or_404(farmer, email=email, password=password)
             response_data = {
                 'id': data.id,
@@ -33,16 +34,11 @@ def login(request):
                 'address': data.address,
                 'phone': data.phone,
                 'email': data.email,
-                'profilepic': data.profilepic.url,
                 'verified': data.is_verified,
-                'type': 'farmer'
+                'type': 'farmer',
             }
-            print(response_data.get('profilepic'))
             return JsonResponse(response_data)
-        except Exception as e:
-            print(e)
-            pass
-        try:
+        elif (seller.objects.filter(email=email, password=password).exists()):
             data = get_object_or_404(seller, email=email, password=password)
             response_data = {
                 'id': data.id,
@@ -53,8 +49,17 @@ def login(request):
                 'type': 'seller'
             }
             return JsonResponse(response_data)
-        except:
-            pass
+        elif (admin.objects.filter(email=email, password=password).exists()):
+            data = get_object_or_404(admin, email=email, password=password)
+            print(data)
+            response_data = {
+                email: data.email,
+                password: data.password,
+                'type': 'admin'
+            }
+            return JsonResponse(response_data)
+        else:
+            return JsonResponse({'success': False, 'message': 'Usernot found'})
     else:
         return JsonResponse({'success': False, 'message': 'Invalid Request'})
 
@@ -70,22 +75,25 @@ def signup(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         email = data.get('email')
-        password = data.get('pass')
+        password = data.get('password')
         address = data.get('address')
         phone = data.get('phone')
         user = data.get('user')
         print(email, password, address, phone, user)
         if user == 'farmer':
             res = farmer.objects.filter(email=email)
+            print(res)
             if res:
                 return JsonResponse({'success': False, 'message': 'Email already exists'})
             else:
                 data = farmer.objects.create(
                     email=email, password=password, address=address, phone=phone)
+                print(data)
                 data.save()
                 response_data = {
                     'type': 'farmer',
                     'id': data.id,
+
                 }
             return JsonResponse(response_data)
 
@@ -97,9 +105,11 @@ def signup(request):
                 data = seller.objects.create(
                     email=email, password=password, address=address, phone=phone)
                 data.save()
-                return JsonResponse({'success': True, 'message': 'Successfully Registered'})
-        else:
-            return JsonResponse({'success': False, 'message': 'Password and Confirm Password does not match'})
+                response_data = {
+                    'type': 'seller',
+                    'id': data.id,
+                }
+            return JsonResponse(response_data)
     else:
         return JsonResponse({'success': False, 'message': 'Invalid Request'})
 
@@ -109,26 +119,51 @@ def kyc(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         id = data.get('id')
-        fullname = data.get('fullname')
-        address = data.get('address')
-        phone = data.get('phone')
-        dob = data.get('dob')
-        gender = data.get('gender')
-        profile = data.get('profile')
-        landownership = data.get('landownership')
-        citizen_front = data.get('citizen-front')
-        citizen_back = data.get('citizen-back')
+        name = data.get('name')
+        citizenf = data.get('citifront')
+        citizenb = data.get('citiback')
+        profile = data.get('proimg')
+        print(id, name, citizenf, citizenb, profile)
         res = farmer.objects.filter(id=id)
+        print(res)
+        if res:
+            farmer.objects.filter(id=id).update(
+                name=name, citizenship_front=citizenf, citizenship_back=citizenb, profilepic=profile)
+            return JsonResponse({'success': True, 'message': 'Successfully Updated'})
+        else:
+            return JsonResponse({'success': False, 'message': ' Could not update'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid Request'})
 
-        # update data where the id is equal to the id
+
+@api_view(['GET'])
+def display_kyc(request):
+    unverified_farmers = farmer.objects.filter(is_verified=False)
+    serializer = farmerserializer(unverified_farmers, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
 @csrf_exempt
-def display_kyc(request):
-    if request.method == 'GET':
-        unverified_farmers = farmer.objects.filter(is_verified=False)
-        serializer = farmerserializer(unverified_farmers, many=True)
-        return JsonResponse(serializer.data, safe=False)
+def verify_kyc(request):
+    print("yolo")
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        id = data.get('id')
+        print(id)
+        farmer.objects.filter(id=id).update(is_verified=True)
+        return JsonResponse({'success': True, 'message': 'Successfully Verified'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid Request'})
+
+
+@csrf_exempt
+def reject_kyc(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        id = data.get('id')
+        print(id)
+        farmer.objects.filter(id=id).delete()
+        return JsonResponse({'success': True, 'message': 'Successfully Rejected'})
     else:
         return JsonResponse({'success': False, 'message': 'Invalid Request'})
 
@@ -146,6 +181,8 @@ def add_crops(request):
         rain = data.get('rain')
         disease = data.get('disease')
         nutrient = data.get('nutrient')
+        print(name, region, province, temperature,
+              climate, soil, rain, disease, nutrient)
 
         response = cropdetail.objects.create(name=name, region=region, province=province, temperature=temperature,
                                              climate=climate, soil=soil, rain=rain, disease=disease, nutrient=nutrient)
@@ -156,15 +193,35 @@ def add_crops(request):
 
 
 @csrf_exempt
+def delete_crops(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        id = data.get('id')
+        print(id)
+        cropdetail.objects.filter(id=id).delete()
+        return JsonResponse({'success': True, 'message': 'Successfully Deleted'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid Request'})
+
+
+@api_view(['GET'])
+def cropsdetail(request):  # get request from the frontend
+    crops = cropdetail.objects.all()  # get all the data from the database
+    serializer = cropdetailserializer(crops, many=True)
+    return Response(serializer.data)  # return the data to the frontend
+
+
+@csrf_exempt
 def add_event(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        name = data.get('name')
-        date = data.get('date')
-        time = data.get('time')
-        description = data.get('description')
+        name = data.get('eventname')
+        date = data.get('eventdate')
+        time = data.get('eventtime')
+        description = data.get('eventdesc')
+        print(name, date, time, description)
         response = event.objects.create(
-            name=name, date=date, time=time, description=description)
+            eventname=name, eventdate=date, eventtime=time, eventdescription=description)
         response.save()
         return JsonResponse({'sucess': True, 'message': 'Successfully Added'})
     else:
@@ -178,13 +235,6 @@ def get_event(request):
     return Response(serializer.data)
 
 
-@api_view(['GET'])
-def cropsdetail(request):  # get request from the frontend
-    crops = cropdetail.objects.all()  # get all the data from the database
-    serializer = cropdetailserializer(crops, many=True)
-    return Response(serializer.data)  # return the data to the frontend
-
-
 @csrf_exempt
 @api_view(['Get'])
 def get_seller_data(request):
@@ -196,10 +246,9 @@ def get_seller_data(request):
 @csrf_exempt
 @api_view(['Get'])
 def get_farmer_data(request):
-    data = farmer.objects.all()
+    data = farmer.objects.filter(is_verified=True)
     serializer = farmerserializer(data, many=True)
     return JsonResponse(serializer.data, safe=False)
-
 
 
 @csrf_exempt
@@ -209,22 +258,67 @@ def forget(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         email = data.get('email')
-        if email:
-            otp = str(random.randint(100000, 999999))
-            # Compose the email message
-            subject = 'Your OTP for password reset'
-            message = f'Your OTP is {otp}.'
-            from_email = settings.EMAIL_HOST_USER
-            recipient_list = [email]
-            # Send the email using Gmail
-            send_mail(subject, message, from_email,
-                      recipient_list, fail_silently=True)
-            # Store the OTP in the session for later verification
-            request.session['otp'] = otp
-            request.session['email'] = email
-            return JsonResponse({'success': True, 'message': 'Password changed successfully'})
+        print(email)
+        otp = str(random.randint(100000, 999999))
+        # Compose the email message
+        subject = 'Your OTP for password reset'
+        message = f'Your OTP is {otp}.'
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [email]
+        # Send the email using Gmail
+        send_mail(subject, message, from_email,
+                  recipient_list, fail_silently=True)
+        # Store the OTP in the session for later verification
+        request.session['otp'] = otp
+        request.session['email'] = email
+        respose_data = {'otp': otp, 'success': True}
+        return JsonResponse(respose_data)
+    else:
+        return JsonResponse({'success': True, 'message': 'Password changed successfully'})
 
+
+# @csrf_exempt
+# # code to get the otp from the user and verify it
+# def verify(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         otp = data.get('otp')
+#         if otp == request.session['otp']:
+#             return JsonResponse({'success': True, 'message': 'OTP verified'})
+#         else:
+#             return JsonResponse({'success': False, 'message': 'OTP incorrect'})
+#     else:
+#         return JsonResponse({'success': False, 'message': 'Invalid Request'})
+
+# code to take the id of user after the login and display the crop of the user
+
+@csrf_exempt
+def update_password(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        password = data.get('newpass')
+        email = data.get('email')
+        print(email)
+        print(password)
+        if (farmer.objects.filter(email=email).exists()):
+            data = farmer.objects.get(email=email)
+            data.password = password
+            data.save()
+            return JsonResponse({'success': True, 'message': 'Password changed successfully'})
+        elif (seller.objects.filter(email=email).exists()):
+            data = seller.objects.get(email=email)
+            data.password = password
+            data.save()
+            return JsonResponse({'success': True, 'message': 'Password changed successfully'})
         else:
-            return JsonResponse({'success': True, 'message': 'Password changed successfully'})
+            return JsonResponse({'success': False, 'message': 'Not changed'})
+    else:
+        return JsonResponse({'success': False, 'message': 'Invalid Request'})
 
-    return JsonResponse({'success': True, 'message': 'Password changed successfully'})
+
+@csrf_exempt
+@api_view(['GET'])
+def display_crop(request, id):
+    crop = get_object_or_404(cropdetail, id=id)
+    serializer = cropdetailserializer(crop)
+    return JsonResponse(serializer.data, safe=False)
