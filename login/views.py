@@ -79,6 +79,7 @@ def signup(request):
         address = data.get('address')
         phone = data.get('phone')
         user = data.get('user')
+        name = data.get('name')
         print(email, password, address, phone, user)
         if user == 'farmer':
             res = farmer.objects.filter(email=email)
@@ -102,8 +103,9 @@ def signup(request):
             if res:
                 return JsonResponse({'success': False, 'message': 'Email already exists'})
             else:
-                data = seller.objects.create(
-                    email=email, password=password, address=address, phone=phone)
+                print(name)
+                data = seller.objects.create(email=email, password=password, address=address, phone=phone)
+                print(data)
                 data.save()
                 response_data = {
                     'type': 'seller',
